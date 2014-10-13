@@ -1,0 +1,88 @@
+body, input, button {
+	font: 11px Verdana;
+}
+body {
+	margin: 0;
+	background: #ddd;
+}
+textarea, code {
+	margin: 0;
+	padding: 5px;
+	border: 1px solid #ddd;
+	resize: none;
+	font: 11px monsolas, monospace;
+	tab-size: 4;
+	-moz-tab-size: 4;
+	white-space: pre-wrap;
+}
+h1 {
+	margin: 0;
+	padding: 10px;
+	border-bottom: 1px solid #ccc;
+	background: #fff;
+}
+h2 {
+	margin: 0 0 5px;
+}
+ul {
+	margin: 0 0 5px;
+	padding: 0;
+	list-style: none;
+}
+
+/* COMMON */
+.panel {
+	margin: 10px;
+	padding: 10px;
+	background: #fff;
+	border-bottom: 1px solid #ccc;
+}
+.flex {
+	display: flex;
+}
+.flex > * {
+	flex: 1;
+}
+
+/* PLAYGROUND */
+.playground {
+}
+#format {
+	margin: 0 5px;
+	padding: 0;
+	border: 0;
+	flex: 0 0 30px;
+	font-size: 25px;
+	background: #ddd;
+}
+#format:active {
+	background: #ccc;
+}
+
+/* SETTINGS */
+.settings > label {
+	display: inline-block;
+	width: 100px;
+}
+
+/* OPTIONS */
+.options-group-container .options-group-container {
+	padding-left: 20px;
+}
+.options-group {
+	line-height: 18px;
+}
+.options-group-title {
+	cursor: pointer;
+}
+.options-group-title > b {
+	display: inline-block;
+	width: 13px;
+}
+.options-option {
+	width: 30px;
+	margin: 1px;
+	padding: 1px;
+	border: 0;
+	border-bottom: 1px solid #ddd;
+}
