@@ -8,6 +8,9 @@ body {
 	flex-direction: column;
 	height: 100vh;
 }
+body > * {
+	margin-bottom: 10px;
+}
 textarea {
 	margin: 0px;
 	padding: 0;
@@ -100,10 +103,5 @@ ul {
 }
 
 .options {
-	min-height: 100px;
-	flex: 1;
-}
-
-body > * {
-	margin-bottom: 10px;
+	flex: 1 0 100px;
 }
