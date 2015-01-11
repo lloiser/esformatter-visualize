@@ -21,9 +21,10 @@
     "esformatter": "^0.4.3",
     "esformatter-braces": "^0.4.1",
     "esformatter-semicolons": "^1.0.3",
-    "esformatter-quotes": "lloiser/esformatter-quotes#disabled"
+    "esformatter-quotes": "lloiser/esformatter-quotes#disabled",
+    "uglifyify": "^2.6.0"
   },
   "scripts": {
-    "bundle": "browserify -r esformatter-quotes -r esformatter-braces -r esformatter-semicolons esformatter-exports.js > bundle.js"
+    "bundle": "browserify -g uglifyify -r esformatter-quotes -r esformatter-braces -r esformatter-semicolons esformatter-exports.js > bundle.js"
   }
 }
