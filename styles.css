@@ -4,13 +4,16 @@ body, input, button {
 body {
 	margin: 0;
 	background: #ddd;
+	display: flex;
+	flex-direction: column;
+	height: 100vh;
 }
-textarea, code {
-	margin: 0;
-	padding: 5px;
-	border: 1px solid #ddd;
+textarea {
+	margin: 0px;
+	padding: 0;
+	border: 1px solid #DDD;
 	resize: none;
-	font: 11px monsolas, monospace;
+	font: 11px Consolas, monospace;
 	tab-size: 4;
 	-moz-tab-size: 4;
 	white-space: pre-wrap;
@@ -20,6 +23,7 @@ h1 {
 	padding: 10px;
 	border-bottom: 1px solid #ccc;
 	background: #fff;
+	flex-shrink: 0;
 }
 h2 {
 	margin: 0 0 5px;
@@ -32,10 +36,12 @@ ul {
 
 /* COMMON */
 .panel {
-	margin: 10px;
+	margin-left: 10px;
+	margin-right: 10px;
 	padding: 10px;
 	background: #fff;
 	border-bottom: 1px solid #ccc;
+	overflow: auto;
 }
 .flex {
 	display: flex;
@@ -46,6 +52,8 @@ ul {
 
 /* PLAYGROUND */
 .playground {
+	flex: 1 0 100px;
+	max-height: 300px;
 }
 #format {
 	margin: 0 5px;
@@ -85,4 +93,17 @@ ul {
 	padding: 1px;
 	border: 0;
 	border-bottom: 1px solid #ddd;
+}
+
+.settings {
+	flex-shrink: 0;
+}
+
+.options {
+	min-height: 100px;
+	flex: 1;
+}
+
+body > * {
+	margin-bottom: 10px;
 }

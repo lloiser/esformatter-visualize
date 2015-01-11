@@ -16,6 +16,11 @@ function init()
 	$("#importScript").on("change", onImportScript);
 	$("#importOptions").on("change", onImportOptions);
 
+	// get the last options
+	var options = localStorage.getItem("options");
+	if (options)
+		customOptions = JSON.parse(options);
+
 	createPresets();
 	updateOptions();
 }
@@ -30,8 +35,12 @@ function updateOptions()
 
 function updateOptionsOutput()
 {
-	var output = esformatter.format("x = " + JSON.stringify(customOptions));
+	var options = JSON.stringify(customOptions);
+	var output = esformatter.format("x = " + options);
 	$("#optionsOutput").val(output.replace("x = ", ""));
+
+	// save the current options
+	localStorage.setItem("options", options);
 }
 
 function buildDisplayOptions()
@@ -130,7 +139,7 @@ function cleanCustomOptions()
 
 function format()
 {
-	$output.text(
+	$output.val(
 		esformatter.format($input.val(), customOptions)
 	);
 }
