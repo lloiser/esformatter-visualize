@@ -1,0 +1,29 @@
+{
+  "name": "esformatter-visualize",
+  "version": "0.0.1",
+  "description": "UI for esformatter",
+  "author": "Lukas Beranek <lukasberanek@gmx.net>",
+  "license": "MIT",
+  "homepage": "http://lloiser.github.io/esformatter-visualize",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lloiser/esformatter-visualize.git"
+  },
+  "bugs": {
+    "url": "https://github.com/lloiser/esformatter-visualize/issues"
+  },
+  "keywords": [
+    "esformatter",
+    "visualize"
+  ],
+  "devDependencies": {
+    "browserify": "^8.1.0",
+    "esformatter": "^0.4.3",
+    "esformatter-braces": "^0.4.1",
+    "esformatter-semicolons": "^1.0.3",
+    "esformatter-quotes": "lloiser/esformatter-quotes#disabled"
+  },
+  "scripts": {
+    "bundle": "browserify -r esformatter-quotes -r esformatter-braces -r esformatter-semicolons esformatter-exports.js > bundle.js"
+  }
+}

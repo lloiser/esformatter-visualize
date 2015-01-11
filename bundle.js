@@ -1,62 +1,15 @@
-require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+"use strict";
 
-},{}],2:[function(require,module,exports){
-// shim for using process in browser
-
-var process = module.exports = {};
-
-process.nextTick = (function () {
-    var canSetImmediate = typeof window !== 'undefined'
-    && window.setImmediate;
-    var canPost = typeof window !== 'undefined'
-    && window.postMessage && window.addEventListener
-    ;
-
-    if (canSetImmediate) {
-        return function (f) { return window.setImmediate(f) };
-    }
-
-    if (canPost) {
-        var queue = [];
-        window.addEventListener('message', function (ev) {
-            var source = ev.source;
-            if ((source === window || source === null) && ev.data === 'process-tick') {
-                ev.stopPropagation();
-                if (queue.length > 0) {
-                    var fn = queue.shift();
-                    fn();
-                }
-            }
-        }, true);
-
-        return function nextTick(fn) {
-            queue.push(fn);
-            window.postMessage('process-tick', '*');
-        };
-    }
-
-    return function nextTick(fn) {
-        setTimeout(fn, 0);
-    };
-})();
-
-process.title = 'browser';
-process.browser = true;
-process.env = {};
-process.argv = [];
-
-process.binding = function (name) {
-    throw new Error('process.binding is not supported');
-}
-
-// TODO(shtylman)
-process.cwd = function () { return '/' };
-process.chdir = function (dir) {
-    throw new Error('process.chdir is not supported');
-};
+window.esformatter = require("esformatter");
+window.presets = require("./node_modules/esformatter/lib/options").presets;
+esformatter.register(require("esformatter-braces"));
+esformatter.register(require("esformatter-quotes"));
+},{"./node_modules/esformatter/lib/options":44,"esformatter":11,"esformatter-braces":"esformatter-braces","esformatter-quotes":"esformatter-quotes"}],2:[function(require,module,exports){
 
 },{}],3:[function(require,module,exports){
-var process=require("__browserify_process");// Copyright Joyent, Inc. and other Node contributors.
+(function (process){
+// Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the
@@ -281,73 +234,67 @@ var substr = 'ab'.substr(-1) === 'b'
     }
 ;
 
-},{"__browserify_process":2}],4:[function(require,module,exports){
-"use strict";
+}).call(this,require('_process'))
+},{"_process":4}],4:[function(require,module,exports){
+// shim for using process in browser
 
-window.esformatter = require("esformatter");
-window.presets = require("./node_modules/esformatter/lib/options").presets;
-esformatter.register(require("esformatter-braces"));
-esformatter.register(require("esformatter-quotes"));
-},{"./node_modules/esformatter/lib/options":50,"esformatter":17,"esformatter-braces":"iA1BPq","esformatter-quotes":"qF0x6g"}],"iA1BPq":[function(require,module,exports){
-'use strict';
+var process = module.exports = {};
+var queue = [];
+var draining = false;
 
-var tk = require('rocambole-token');
-
-var wrapWithBraces = function (node, prop) {
-    var oldNode = node[prop];
-    var finalToken = oldNode.endToken;
-    //apply a custom fix if endtoken is empty
-    if (tk.isEmpty(oldNode.endToken)) {
-        finalToken = tk.findPrevNonEmpty(oldNode.endToken);
+function drainQueue() {
+    if (draining) {
+        return;
     }
-    var newNode = {
-        type: 'BlockStatement',
-        parent: oldNode.parent,
-        root: oldNode.root,
-        body: [oldNode],
-        startToken: tk.before(oldNode.startToken, {
-            type: 'Punctuator',
-            value: '{'
-        }),
-        endToken: tk.after(finalToken, {
-            type: 'Punctuator',
-            value: '}'
-        })
-    };
-    oldNode.parent = newNode;
-    node[prop] = newNode;
-};
-
-var checkConditionals = function (node) {
-    //replace regular conditionals
-    if (node.consequent.type !== 'BlockStatement') {
-        wrapWithBraces(node, 'consequent');
+    draining = true;
+    var currentQueue;
+    var len = queue.length;
+    while(len) {
+        currentQueue = queue;
+        queue = [];
+        var i = -1;
+        while (++i < len) {
+            currentQueue[i]();
+        }
+        len = queue.length;
     }
-    //replace else alternate conditional
-    if (node.alternate && node.alternate.type !== 'IfStatement' && node.alternate.type !== 'BlockStatement') {
-        wrapWithBraces(node, 'alternate');
+    draining = false;
+}
+process.nextTick = function (fun) {
+    queue.push(fun);
+    if (!draining) {
+        setTimeout(drainQueue, 0);
     }
 };
 
-var isLoopNode = function (node) {
-    return node.type === 'WhileStatement' ||
-        node.type === 'DoWhileStatement' ||
-        node.type === 'ForStatement' ||
-        node.type === 'ForInStatement';
+process.title = 'browser';
+process.browser = true;
+process.env = {};
+process.argv = [];
+process.version = ''; // empty string to avoid regexp issues
+
+function noop() {}
+
+process.on = noop;
+process.addListener = noop;
+process.once = noop;
+process.off = noop;
+process.removeListener = noop;
+process.removeAllListeners = noop;
+process.emit = noop;
+
+process.binding = function (name) {
+    throw new Error('process.binding is not supported');
 };
 
-exports.nodeBefore = function (node) {
-    //handle conditionals
-    if (node.type === 'IfStatement') {
-        checkConditionals(node);
-    } else if (isLoopNode(node) && node.body.type !== 'BlockStatement') {
-        wrapWithBraces(node, 'body');
-    }
+// TODO(shtylman)
+process.cwd = function () { return '/' };
+process.chdir = function (dir) {
+    throw new Error('process.chdir is not supported');
 };
+process.umask = function() { return 0; };
 
-},{"rocambole-token":8}],"esformatter-braces":[function(require,module,exports){
-module.exports=require('iA1BPq');
-},{}],7:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 "use strict";
 
 var makeCheck = require('./makeCheck');
@@ -425,7 +372,7 @@ function findPrevNonEmpty(endToken) {
 }
 
 
-},{"./is":10,"./makeCheck":11}],8:[function(require,module,exports){
+},{"./is":8,"./makeCheck":9}],6:[function(require,module,exports){
 "use strict";
 
 // ---
@@ -461,7 +408,7 @@ mixIn(exports, require('./is'));
 mixIn(exports, require('./remove'));
 
 
-},{"./find":7,"./insert":9,"./is":10,"./remove":12}],9:[function(require,module,exports){
+},{"./find":5,"./insert":7,"./is":8,"./remove":10}],7:[function(require,module,exports){
 "use strict";
 
 exports.before = before;
@@ -494,7 +441,7 @@ function after(target, newToken) {
 }
 
 
-},{}],10:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 "use strict";
 
 
@@ -559,7 +506,7 @@ function isComment(token) {
 }
 
 
-},{}],11:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 "use strict";
 
 module.exports = makeCheck;
@@ -589,7 +536,7 @@ function makeStringCheck(str) {
   };
 }
 
-},{}],12:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 "use strict";
 
 var makeCheck = require('./makeCheck');
@@ -675,138 +622,7 @@ function removeEmptyInBetween(startToken, endToken) {
 }
 
 
-},{"./is":10,"./makeCheck":11}],"esformatter-quotes":[function(require,module,exports){
-module.exports=require('qF0x6g');
-},{}],"qF0x6g":[function(require,module,exports){
-//jshint node:true, eqnull:true
-'use strict';
-
-var DOUBLE_QUOTE = '"';
-var SINGLE_QUOTE = '\'';
-
-var avoidEscape;
-var disabled;
-var quoteValue;
-var alternateQuote;
-
-
-exports.setOptions = function(opts) {
-  opts = opts && opts.quotes;
-  if (!opts || (opts.type == null && opts.avoidEscape == null)) {
-    disabled = true;
-    return;
-  }
-  disabled = false;
-  if (opts.type != null) {
-    quoteValue = opts.type === 'single' ? SINGLE_QUOTE : DOUBLE_QUOTE;
-    alternateQuote = opts.type !== 'single' ? SINGLE_QUOTE : DOUBLE_QUOTE;
-  }
-  avoidEscape = opts.avoidEscape;
-};
-
-
-exports.tokenBefore = function(token) {
-  if (disabled) return;
-
-  if (token.type === 'String') {
-    var content = token.value.substr(1, token.value.length - 2);
-    var quote = quoteValue;
-    var alternate = alternateQuote;
-
-    var shouldAvoidEscape = avoidEscape &&
-      content.indexOf(quote) >= 0 &&
-      content.indexOf(alternate) < 0;
-
-    if (shouldAvoidEscape) {
-      alternate = quoteValue;
-      quote = alternateQuote;
-    }
-
-    // we always normalize the behavior to remove unnecessary escapes
-    var alternateEscape = new RegExp('\\\\' + alternate, 'g');
-    content = content.replace(alternateEscape, alternate);
-
-    var quoteEscape = new RegExp('([^\\\\])' + quote, 'g');
-    content = content.replace(quoteEscape, '$1\\' + quote);
-
-    token.value = quote + content + quote;
-  }
-};
-
-
-},{}],"esformatter-semicolons":[function(require,module,exports){
-module.exports=require('tXBt6u');
-},{}],"tXBt6u":[function(require,module,exports){
-exports.nodeBefore = function(node) {
-  if (~['ExpressionStatement', 'VariableDeclaration', 'ReturnStatement',
-    'ContinueStatement', 'BreakStatement'].indexOf(node.type)
-  ) {
-    var end = true;
-    var token = node.endToken;
-
-    while (isEmpty(token) || isComment(token)) {
-      if (end) {
-        end = false;
-      }
-      token = token.prev;
-    }
-
-    if (!isSemicolon(token) && !isLoop(node.parent)) {
-      var semicolon = {
-        type: 'Punctuator',
-        value: ';',
-        prev: token,
-        next: token.next,
-        root: token.root
-      };
-
-      if (token.next) {
-        token.next.prev = semicolon;
-      } else if (token.root) {
-        token.root.endToken = semicolon;
-      }
-
-      token.next = semicolon;
-
-      if (end) {
-        node.endToken = semicolon;
-      }
-    }
-  } else if ('EmptyStatement' === node.type) {
-    // FIXME: Basically, setting value to an empty string
-    // and changing type to "EmptyStatement" for "WhiteSpace",
-    // "Indent", and "LineBreak" is a workaround to prevent a bug.
-    // See https://github.com/bulyshko/esformatter-semicolons/issues/2
-    var token = node.startToken;
-    var prev = token.prev;
-
-    while (isEmpty(prev)) {
-      prev.type = 'EmptyStatement';
-      prev.value = '';
-      prev = prev.prev;
-    }
-
-    token.value = '';
-  }
-};
-
-function isEmpty(token) {
-  return token && ~['WhiteSpace', 'Indent', 'LineBreak'].indexOf(token.type);
-}
-
-function isComment(token) {
-  return token && ~['LineComment', 'BlockComment'].indexOf(token.type);
-}
-
-function isSemicolon(token) {
-  return token && token.type === 'Punctuator' && token.value === ';';
-}
-
-function isLoop(node) {
-  return node && ~['ForStatement', 'ForInStatement'].indexOf(node.type);
-}
-
-},{}],17:[function(require,module,exports){
+},{"./is":8,"./makeCheck":9}],11:[function(require,module,exports){
 'use strict';
 
 
@@ -944,7 +760,7 @@ function removeTrailingWs(token) {
   }
 }
 
-},{"./hooks":18,"./hooks/expressionParentheses":45,"./indent":46,"./lineBreak":48,"./lineBreakAroundNode":49,"./options":50,"./plugins":51,"./whiteSpace":54,"rocambole":84,"rocambole-token":78}],18:[function(require,module,exports){
+},{"./hooks":12,"./hooks/expressionParentheses":39,"./indent":40,"./lineBreak":42,"./lineBreakAroundNode":43,"./options":44,"./plugins":45,"./whiteSpace":48,"rocambole":78,"rocambole-token":72}],12:[function(require,module,exports){
 "use strict";
 
 
@@ -987,7 +803,7 @@ exports.WhileStatement = require('./hooks/WhileStatement');
 
 
 
-},{"./hooks/ArrayExpression":19,"./hooks/AssignmentExpression":20,"./hooks/BinaryExpression":21,"./hooks/CallExpression":22,"./hooks/CatchClause":23,"./hooks/ConditionalExpression":24,"./hooks/DoWhileStatement":25,"./hooks/ForInStatement":26,"./hooks/ForStatement":27,"./hooks/FunctionDeclaration":28,"./hooks/FunctionExpression":29,"./hooks/IfStatement":30,"./hooks/LogicalExpression":31,"./hooks/MemberExpression":32,"./hooks/ObjectExpression":33,"./hooks/ReturnStatement":35,"./hooks/SequenceExpression":36,"./hooks/SwitchCase":37,"./hooks/SwitchStatement":38,"./hooks/ThrowStatement":39,"./hooks/TryStatement":40,"./hooks/UnaryExpression":41,"./hooks/UpdateExpression":42,"./hooks/VariableDeclaration":43,"./hooks/WhileStatement":44}],19:[function(require,module,exports){
+},{"./hooks/ArrayExpression":13,"./hooks/AssignmentExpression":14,"./hooks/BinaryExpression":15,"./hooks/CallExpression":16,"./hooks/CatchClause":17,"./hooks/ConditionalExpression":18,"./hooks/DoWhileStatement":19,"./hooks/ForInStatement":20,"./hooks/ForStatement":21,"./hooks/FunctionDeclaration":22,"./hooks/FunctionExpression":23,"./hooks/IfStatement":24,"./hooks/LogicalExpression":25,"./hooks/MemberExpression":26,"./hooks/ObjectExpression":27,"./hooks/ReturnStatement":29,"./hooks/SequenceExpression":30,"./hooks/SwitchCase":31,"./hooks/SwitchStatement":32,"./hooks/ThrowStatement":33,"./hooks/TryStatement":34,"./hooks/UnaryExpression":35,"./hooks/UpdateExpression":36,"./hooks/VariableDeclaration":37,"./hooks/WhileStatement":38}],13:[function(require,module,exports){
 "use strict";
 
 var _tk = require('rocambole-token');
@@ -1032,7 +848,7 @@ exports.getIndentEdges = function(node) {
   };
 };
 
-},{"../limit":47,"rocambole-token":78}],20:[function(require,module,exports){
+},{"../limit":41,"rocambole-token":72}],14:[function(require,module,exports){
 "use strict";
 
 var _tk = require('rocambole-token');
@@ -1060,7 +876,7 @@ exports.getIndentEdges = function(node) {
   }
 };
 
-},{"../lineBreak":48,"../whiteSpace":54,"rocambole-token":78}],21:[function(require,module,exports){
+},{"../lineBreak":42,"../whiteSpace":48,"rocambole-token":72}],15:[function(require,module,exports){
 "use strict";
 
 var _tk = require('rocambole-token');
@@ -1079,7 +895,7 @@ exports.getIndentEdges = function(node) {
   };
 };
 
-},{"../whiteSpace":54,"rocambole-token":78}],22:[function(require,module,exports){
+},{"../whiteSpace":48,"rocambole-token":72}],16:[function(require,module,exports){
 "use strict";
 
 var _tk = require('rocambole-token');
@@ -1151,7 +967,7 @@ exports.getIndentEdges = function(node) {
 
 };
 
-},{"../limit":47,"rocambole-token":78}],23:[function(require,module,exports){
+},{"../limit":41,"rocambole-token":72}],17:[function(require,module,exports){
 "use strict";
 
 var _tk = require('rocambole-token');
@@ -1182,7 +998,7 @@ exports.getIndentEdges = function(node) {
   return node.body;
 };
 
-},{"../limit":47,"rocambole-token":78}],24:[function(require,module,exports){
+},{"../limit":41,"rocambole-token":72}],18:[function(require,module,exports){
 "use strict";
 
 var _tk = require('rocambole-token');
@@ -1211,7 +1027,7 @@ exports.getIndentEdges = function(node) {
   }
 };
 
-},{"../whiteSpace":54,"rocambole-token":78}],25:[function(require,module,exports){
+},{"../whiteSpace":48,"rocambole-token":72}],19:[function(require,module,exports){
 "use strict";
 
 var _tk = require('rocambole-token');
@@ -1243,7 +1059,7 @@ exports.getIndentEdges = function(node) {
   ];
 };
 
-},{"../lineBreak":48,"../whiteSpace":54,"rocambole-token":78}],26:[function(require,module,exports){
+},{"../lineBreak":42,"../whiteSpace":48,"rocambole-token":72}],20:[function(require,module,exports){
 "use strict";
 
 var _br = require('../lineBreak');
@@ -1299,7 +1115,7 @@ exports.getIndentEdges = function(node) {
   return edges;
 };
 
-},{"../lineBreak":48,"../whiteSpace":54,"rocambole-token":78}],27:[function(require,module,exports){
+},{"../lineBreak":42,"../whiteSpace":48,"rocambole-token":72}],21:[function(require,module,exports){
 "use strict";
 
 var _tk = require('rocambole-token');
@@ -1357,7 +1173,7 @@ exports.getIndentEdges = function(node) {
   return edges;
 };
 
-},{"../limit":47,"../whiteSpace":54,"rocambole-token":78}],28:[function(require,module,exports){
+},{"../limit":41,"../whiteSpace":48,"rocambole-token":72}],22:[function(require,module,exports){
 "use strict";
 
 var _limit = require('../limit');
@@ -1376,7 +1192,7 @@ exports.getIndentEdges = function(node) {
   return node.body;
 };
 
-},{"../limit":47,"./Params":34}],29:[function(require,module,exports){
+},{"../limit":41,"./Params":28}],23:[function(require,module,exports){
 "use strict";
 
 var _tk = require('rocambole-token');
@@ -1438,7 +1254,7 @@ function isOfType(node, type) {
   return node && node.type === type;
 }
 
-},{"../limit":47,"../whiteSpace":54,"./Params":34,"rocambole-token":78}],30:[function(require,module,exports){
+},{"../limit":41,"../whiteSpace":48,"./Params":28,"rocambole-token":72}],24:[function(require,module,exports){
 "use strict";
 
 var _br = require('../lineBreak');
@@ -1562,7 +1378,7 @@ exports.getIndentEdges = function(node, opts) {
   return edges;
 };
 
-},{"../limit":47,"../lineBreak":48,"../whiteSpace":54,"rocambole-token":78}],31:[function(require,module,exports){
+},{"../limit":41,"../lineBreak":42,"../whiteSpace":48,"rocambole-token":72}],25:[function(require,module,exports){
 "use strict";
 
 var _br = require('../lineBreak');
@@ -1591,7 +1407,7 @@ exports.format = function LogicalExpression(node) {
   }
 };
 
-},{"../lineBreak":48,"../whiteSpace":54,"rocambole-token":78}],32:[function(require,module,exports){
+},{"../lineBreak":42,"../whiteSpace":48,"rocambole-token":72}],26:[function(require,module,exports){
 "use strict";
 
 var _tk = require('rocambole-token');
@@ -1630,7 +1446,7 @@ exports.getIndentEdges = function(node) {
 };
 
 
-},{"../whiteSpace":54,"rocambole-token":78}],33:[function(require,module,exports){
+},{"../whiteSpace":48,"rocambole-token":72}],27:[function(require,module,exports){
 "use strict";
 
 var _br = require('../lineBreak');
@@ -1725,7 +1541,7 @@ function isChainedMemberExpressionArgument(node) {
   );
 }
 
-},{"../limit":47,"../lineBreak":48,"../whiteSpace":54,"rocambole-token":78}],34:[function(require,module,exports){
+},{"../limit":41,"../lineBreak":42,"../whiteSpace":48,"rocambole-token":72}],28:[function(require,module,exports){
 "use strict";
 
 var _ws = require('../whiteSpace');
@@ -1750,7 +1566,7 @@ exports.format = function Params(node) {
   }
 };
 
-},{"../limit":47,"../whiteSpace":54,"rocambole-token":78}],35:[function(require,module,exports){
+},{"../limit":41,"../whiteSpace":48,"rocambole-token":72}],29:[function(require,module,exports){
 "use strict";
 
 var _tk = require('rocambole-token');
@@ -1803,7 +1619,7 @@ exports.getIndentEdges = function(node, opts) {
     };
 };
 
-},{"../whiteSpace":54,"./expressionParentheses":45,"rocambole-token":78}],36:[function(require,module,exports){
+},{"../whiteSpace":48,"./expressionParentheses":39,"rocambole-token":72}],30:[function(require,module,exports){
 "use strict";
 
 var _ws = require('../whiteSpace');
@@ -1821,7 +1637,7 @@ exports.format = function SequenceExpression(node) {
   });
 };
 
-},{"../whiteSpace":54}],37:[function(require,module,exports){
+},{"../whiteSpace":48}],31:[function(require,module,exports){
 "use strict";
 
 var _ws = require('../whiteSpace');
@@ -1844,7 +1660,7 @@ exports.getIndentEdges = function(node) {
   };
 };
 
-},{"../lineBreak":48,"../whiteSpace":54}],38:[function(require,module,exports){
+},{"../lineBreak":42,"../whiteSpace":48}],32:[function(require,module,exports){
 "use strict";
 
 var _tk = require('rocambole-token');
@@ -1873,7 +1689,7 @@ exports.getIndentEdges = function(node) {
   };
 };
 
-},{"../limit":47,"rocambole-token":78}],39:[function(require,module,exports){
+},{"../limit":41,"rocambole-token":72}],33:[function(require,module,exports){
 "use strict";
 
 var _ws = require('../whiteSpace');
@@ -1883,7 +1699,7 @@ exports.format = function ThrowStatement(node) {
   _ws.limit(node.startToken, 'ThrowKeyword');
 };
 
-},{"../whiteSpace":54}],40:[function(require,module,exports){
+},{"../whiteSpace":48}],34:[function(require,module,exports){
 "use strict";
 
 var _tk = require('rocambole-token');
@@ -1929,7 +1745,7 @@ exports.getIndentEdges = function(node) {
   return edges;
 };
 
-},{"../limit":47,"rocambole-token":78}],41:[function(require,module,exports){
+},{"../limit":41,"rocambole-token":72}],35:[function(require,module,exports){
 "use strict";
 
 var _br = require('../lineBreak');
@@ -1953,7 +1769,7 @@ exports.format = function UnaryExpression(node) {
   }
 };
 
-},{"../lineBreak":48,"../whiteSpace":54,"rocambole-token":78}],42:[function(require,module,exports){
+},{"../lineBreak":42,"../whiteSpace":48,"rocambole-token":72}],36:[function(require,module,exports){
 "use strict";
 
 var _tk = require('rocambole-token');
@@ -1963,7 +1779,7 @@ exports.format = function UpdateExpression(node) {
   _tk.removeEmptyInBetween(node.startToken, node.endToken);
 };
 
-},{"rocambole-token":78}],43:[function(require,module,exports){
+},{"rocambole-token":72}],37:[function(require,module,exports){
 "use strict";
 
 var _br = require('../lineBreak');
@@ -2036,7 +1852,7 @@ exports.getIndentEdges = function(node, opts) {
   return edges;
 };
 
-},{"../lineBreak":48,"../whiteSpace":54,"rocambole-token":78}],44:[function(require,module,exports){
+},{"../lineBreak":42,"../whiteSpace":48,"rocambole-token":72}],38:[function(require,module,exports){
 "use strict";
 
 var _tk = require('rocambole-token');
@@ -2077,7 +1893,7 @@ exports.getIndentEdges = function(node) {
   ];
 };
 
-},{"../limit":47,"rocambole-token":78}],45:[function(require,module,exports){
+},{"../limit":41,"rocambole-token":72}],39:[function(require,module,exports){
 "use strict";
 
 var _tk = require('rocambole-token');
@@ -2179,7 +1995,7 @@ function isValidExpression(node) {
 }
 
 
-},{"../whiteSpace":54,"debug":55,"rocambole-token":78}],46:[function(require,module,exports){
+},{"../whiteSpace":48,"debug":49,"rocambole-token":72}],40:[function(require,module,exports){
 "use strict";
 
 var rocambole = require('rocambole');
@@ -2359,7 +2175,7 @@ function updateBlockComment(comment) {
 }
 
 
-},{"./hooks":18,"debug":55,"mout/string/escapeRegExp":75,"mout/string/repeat":76,"rocambole":84,"rocambole-token":78}],47:[function(require,module,exports){
+},{"./hooks":12,"debug":49,"mout/string/escapeRegExp":69,"mout/string/repeat":70,"rocambole":78,"rocambole-token":72}],41:[function(require,module,exports){
 'use strict';
 
 // limit amount of consecutive white spaces and line breaks adjacent to a given
@@ -2389,7 +2205,7 @@ function limitAround(token, typeOrValue) {
   _ws.limit(token, typeOrValue);
 }
 
-},{"./lineBreak":48,"./whiteSpace":54}],48:[function(require,module,exports){
+},{"./lineBreak":42,"./whiteSpace":48}],42:[function(require,module,exports){
 "use strict";
 
 
@@ -2606,7 +2422,7 @@ exports.limitBeforeEndOfFile = function(ast) {
   }
 };
 
-},{"debug":55,"rocambole-token":78,"semver":85}],49:[function(require,module,exports){
+},{"debug":49,"rocambole-token":72,"semver":79}],43:[function(require,module,exports){
 'use strict';
 
 // this module is used for automatic line break around nodes.
@@ -2723,8 +2539,9 @@ function isInsideIfTest(node) {
 }
 
 
-},{"./lineBreak":48,"debug":55,"rocambole-token":78}],50:[function(require,module,exports){
-var process=require("__browserify_process");"use strict";
+},{"./lineBreak":42,"debug":49,"rocambole-token":72}],44:[function(require,module,exports){
+(function (process){
+"use strict";
 
 var stripJsonComments = require('strip-json-comments');
 var fs = require('fs');
@@ -2876,7 +2693,8 @@ function loadAndParseConfig(file) {
 
 
 
-},{"./indent":46,"./lineBreak":48,"./plugins":51,"./preset/default.json":52,"./preset/jquery.json":53,"./whiteSpace":54,"__browserify_process":2,"fs":1,"mout/lang/isObject":63,"mout/object/get":71,"mout/object/merge":73,"path":3,"strip-json-comments":86}],51:[function(require,module,exports){
+}).call(this,require('_process'))
+},{"./indent":40,"./lineBreak":42,"./plugins":45,"./preset/default.json":46,"./preset/jquery.json":47,"./whiteSpace":48,"_process":4,"fs":2,"mout/lang/isObject":57,"mout/object/get":65,"mout/object/merge":67,"path":3,"strip-json-comments":80}],45:[function(require,module,exports){
 "use strict";
 
 var partial = require('mout/function/partial');
@@ -2945,7 +2763,7 @@ function pipe(methodName, input) {
   }, input);
 }
 
-},{"mout/array/remove":57,"mout/function/partial":59}],52:[function(require,module,exports){
+},{"mout/array/remove":51,"mout/function/partial":53}],46:[function(require,module,exports){
 module.exports={
   "indent" : {
     "value": "  ",
@@ -3258,7 +3076,7 @@ module.exports={
 
 }
 
-},{}],53:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 module.exports={
   "preset" : "default",
 
@@ -3313,7 +3131,7 @@ module.exports={
   }
 }
 
-},{}],54:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 "use strict";
 
 // white space helpers
@@ -3422,7 +3240,7 @@ function update(position, target, amount) {
   }
 }
 
-},{"debug":55,"mout/string/repeat":76,"rocambole-token":78}],55:[function(require,module,exports){
+},{"debug":49,"mout/string/repeat":70,"rocambole-token":72}],49:[function(require,module,exports){
 
 /**
  * Expose `debug()` as the module.
@@ -3561,7 +3379,7 @@ try {
   if (window.localStorage) debug.enable(localStorage.debug);
 } catch(e){}
 
-},{}],56:[function(require,module,exports){
+},{}],50:[function(require,module,exports){
 
 
     /**
@@ -3591,7 +3409,7 @@ try {
     module.exports = indexOf;
 
 
-},{}],57:[function(require,module,exports){
+},{}],51:[function(require,module,exports){
 var indexOf = require('./indexOf');
 
     /**
@@ -3606,7 +3424,7 @@ var indexOf = require('./indexOf');
     module.exports = remove;
 
 
-},{"./indexOf":56}],58:[function(require,module,exports){
+},{"./indexOf":50}],52:[function(require,module,exports){
 
 
     /**
@@ -3643,7 +3461,7 @@ var indexOf = require('./indexOf');
 
 
 
-},{}],59:[function(require,module,exports){
+},{}],53:[function(require,module,exports){
 var slice = require('../array/slice');
 
     /**
@@ -3668,7 +3486,7 @@ var slice = require('../array/slice');
 
 
 
-},{"../array/slice":58}],60:[function(require,module,exports){
+},{"../array/slice":52}],54:[function(require,module,exports){
 var kindOf = require('./kindOf');
 var isPlainObject = require('./isPlainObject');
 var mixIn = require('../object/mixIn');
@@ -3703,7 +3521,7 @@ var mixIn = require('../object/mixIn');
         var flags = '';
         flags += r.multiline ? 'm' : '';
         flags += r.global ? 'g' : '';
-        flags += r.ignorecase ? 'i' : '';
+        flags += r.ignoreCase ? 'i' : '';
         return new RegExp(r.source, flags);
     }
 
@@ -3719,7 +3537,7 @@ var mixIn = require('../object/mixIn');
 
 
 
-},{"../object/mixIn":74,"./isPlainObject":64,"./kindOf":66}],61:[function(require,module,exports){
+},{"../object/mixIn":68,"./isPlainObject":58,"./kindOf":60}],55:[function(require,module,exports){
 var clone = require('./clone');
 var forOwn = require('../object/forOwn');
 var kindOf = require('./kindOf');
@@ -3769,7 +3587,7 @@ var isPlainObject = require('./isPlainObject');
 
 
 
-},{"../object/forOwn":70,"./clone":60,"./isPlainObject":64,"./kindOf":66}],62:[function(require,module,exports){
+},{"../object/forOwn":64,"./clone":54,"./isPlainObject":58,"./kindOf":60}],56:[function(require,module,exports){
 var kindOf = require('./kindOf');
     /**
      * Check if value is from a specific "kind".
@@ -3780,7 +3598,7 @@ var kindOf = require('./kindOf');
     module.exports = isKind;
 
 
-},{"./kindOf":66}],63:[function(require,module,exports){
+},{"./kindOf":60}],57:[function(require,module,exports){
 var isKind = require('./isKind');
     /**
      */
@@ -3790,7 +3608,7 @@ var isKind = require('./isKind');
     module.exports = isObject;
 
 
-},{"./isKind":62}],64:[function(require,module,exports){
+},{"./isKind":56}],58:[function(require,module,exports){
 
 
     /**
@@ -3805,7 +3623,7 @@ var isKind = require('./isKind');
 
 
 
-},{}],65:[function(require,module,exports){
+},{}],59:[function(require,module,exports){
 
 
     /**
@@ -3828,7 +3646,7 @@ var isKind = require('./isKind');
 
 
 
-},{}],66:[function(require,module,exports){
+},{}],60:[function(require,module,exports){
 
 
     var _rKind = /^\[object (.*)\]$/,
@@ -3850,7 +3668,7 @@ var isKind = require('./isKind');
     module.exports = kindOf;
 
 
-},{}],67:[function(require,module,exports){
+},{}],61:[function(require,module,exports){
 
 
     /**
@@ -3865,7 +3683,7 @@ var isKind = require('./isKind');
 
 
 
-},{}],68:[function(require,module,exports){
+},{}],62:[function(require,module,exports){
 
 
     /**
@@ -3884,7 +3702,7 @@ var isKind = require('./isKind');
 
 
 
-},{}],69:[function(require,module,exports){
+},{}],63:[function(require,module,exports){
 var hasOwn = require('./hasOwn');
 
     var _hasDontEnumBug,
@@ -3962,7 +3780,7 @@ var hasOwn = require('./hasOwn');
 
 
 
-},{"./hasOwn":72}],70:[function(require,module,exports){
+},{"./hasOwn":66}],64:[function(require,module,exports){
 var hasOwn = require('./hasOwn');
 var forIn = require('./forIn');
 
@@ -3983,7 +3801,7 @@ var forIn = require('./forIn');
 
 
 
-},{"./forIn":69,"./hasOwn":72}],71:[function(require,module,exports){
+},{"./forIn":63,"./hasOwn":66}],65:[function(require,module,exports){
 var isPrimitive = require('../lang/isPrimitive');
 
     /**
@@ -4005,7 +3823,7 @@ var isPrimitive = require('../lang/isPrimitive');
 
 
 
-},{"../lang/isPrimitive":65}],72:[function(require,module,exports){
+},{"../lang/isPrimitive":59}],66:[function(require,module,exports){
 
 
     /**
@@ -4019,7 +3837,7 @@ var isPrimitive = require('../lang/isPrimitive');
 
 
 
-},{}],73:[function(require,module,exports){
+},{}],67:[function(require,module,exports){
 var hasOwn = require('./hasOwn');
 var deepClone = require('../lang/deepClone');
 var isObject = require('../lang/isObject');
@@ -4061,7 +3879,7 @@ var isObject = require('../lang/isObject');
 
 
 
-},{"../lang/deepClone":61,"../lang/isObject":63,"./hasOwn":72}],74:[function(require,module,exports){
+},{"../lang/deepClone":55,"../lang/isObject":57,"./hasOwn":66}],68:[function(require,module,exports){
 var forOwn = require('./forOwn');
 
     /**
@@ -4091,7 +3909,7 @@ var forOwn = require('./forOwn');
     module.exports = mixIn;
 
 
-},{"./forOwn":70}],75:[function(require,module,exports){
+},{"./forOwn":64}],69:[function(require,module,exports){
 var toString = require('../lang/toString');
 
     /**
@@ -4105,7 +3923,7 @@ var toString = require('../lang/toString');
 
 
 
-},{"../lang/toString":67}],76:[function(require,module,exports){
+},{"../lang/toString":61}],70:[function(require,module,exports){
 var toString = require('../lang/toString');
 var toInt = require('../number/toInt');
 
@@ -4133,19 +3951,19 @@ var toInt = require('../number/toInt');
 
 
 
-},{"../lang/toString":67,"../number/toInt":68}],77:[function(require,module,exports){
-module.exports=require(7)
-},{"./is":80,"./makeCheck":81}],78:[function(require,module,exports){
+},{"../lang/toString":61,"../number/toInt":62}],71:[function(require,module,exports){
+arguments[4][5][0].apply(exports,arguments)
+},{"./is":74,"./makeCheck":75,"dup":5}],72:[function(require,module,exports){
+arguments[4][6][0].apply(exports,arguments)
+},{"./find":71,"./insert":73,"./is":74,"./remove":76,"dup":6}],73:[function(require,module,exports){
+arguments[4][7][0].apply(exports,arguments)
+},{"dup":7}],74:[function(require,module,exports){
 arguments[4][8][0].apply(exports,arguments)
-},{"./find":77,"./insert":79,"./is":80,"./remove":82}],79:[function(require,module,exports){
-module.exports=require(9)
-},{}],80:[function(require,module,exports){
-module.exports=require(10)
-},{}],81:[function(require,module,exports){
-module.exports=require(11)
-},{}],82:[function(require,module,exports){
-module.exports=require(12)
-},{"./is":80,"./makeCheck":81}],83:[function(require,module,exports){
+},{"dup":8}],75:[function(require,module,exports){
+arguments[4][9][0].apply(exports,arguments)
+},{"dup":9}],76:[function(require,module,exports){
+arguments[4][10][0].apply(exports,arguments)
+},{"./is":74,"./makeCheck":75,"dup":10}],77:[function(require,module,exports){
 /*
   Copyright (C) 2012 Ariya Hidayat <ariya.hidayat@gmail.com>
   Copyright (C) 2012 Mathias Bynens <mathias@qiwi.be>
@@ -8055,7 +7873,7 @@ parseStatement: true, parseSourceElement: true */
 }));
 /* vim: set sw=4 ts=4 et tw=80 : */
 
-},{}],84:[function(require,module,exports){
+},{}],78:[function(require,module,exports){
 /*jshint node:true */
 "use strict";
 
@@ -8474,7 +8292,7 @@ exports.moonwalk = function moonwalk(ast, fn){
 };
 
 
-},{"esprima":83}],85:[function(require,module,exports){
+},{"esprima":77}],79:[function(require,module,exports){
 ;(function(exports) {
 
 // export the class if we are in a Node-like system.
@@ -9483,7 +9301,7 @@ if (typeof define === 'function' && define.amd)
   semver = {}
 );
 
-},{}],86:[function(require,module,exports){
+},{}],80:[function(require,module,exports){
 /*!
 	strip-json-comments
 	Strip comments from JSON. Lets you use comments in your JSON files!
@@ -9549,4 +9367,188 @@ if (typeof define === 'function' && define.amd)
 	}
 })();
 
-},{}]},{},[4])
+},{}],"esformatter-braces":[function(require,module,exports){
+'use strict';
+
+var tk = require('rocambole-token');
+
+var wrapWithBraces = function (node, prop) {
+    var oldNode = node[prop];
+    var finalToken = oldNode.endToken;
+    //apply a custom fix if endtoken is empty
+    if (tk.isEmpty(oldNode.endToken)) {
+        finalToken = tk.findPrevNonEmpty(oldNode.endToken);
+    }
+    var newNode = {
+        type: 'BlockStatement',
+        parent: oldNode.parent,
+        root: oldNode.root,
+        body: [oldNode],
+        startToken: tk.before(oldNode.startToken, {
+            type: 'Punctuator',
+            value: '{'
+        }),
+        endToken: tk.after(finalToken, {
+            type: 'Punctuator',
+            value: '}'
+        })
+    };
+    oldNode.parent = newNode;
+    node[prop] = newNode;
+};
+
+var checkConditionals = function (node) {
+    //replace regular conditionals
+    if (node.consequent.type !== 'BlockStatement') {
+        wrapWithBraces(node, 'consequent');
+    }
+    //replace else alternate conditional
+    if (node.alternate && node.alternate.type !== 'IfStatement' && node.alternate.type !== 'BlockStatement') {
+        wrapWithBraces(node, 'alternate');
+    }
+};
+
+var isLoopNode = function (node) {
+    return node.type === 'WhileStatement' ||
+        node.type === 'DoWhileStatement' ||
+        node.type === 'ForStatement' ||
+        node.type === 'ForInStatement';
+};
+
+exports.nodeBefore = function (node) {
+    //handle conditionals
+    if (node.type === 'IfStatement') {
+        checkConditionals(node);
+    } else if (isLoopNode(node) && node.body.type !== 'BlockStatement') {
+        wrapWithBraces(node, 'body');
+    }
+};
+
+},{"rocambole-token":6}],"esformatter-quotes":[function(require,module,exports){
+//jshint node:true, eqnull:true
+'use strict';
+
+var DOUBLE_QUOTE = '"';
+var SINGLE_QUOTE = '\'';
+
+var avoidEscape;
+var disabled;
+var quoteValue;
+var alternateQuote;
+
+
+exports.setOptions = function(opts) {
+  opts = opts && opts.quotes;
+  if (!opts || (opts.type == null && opts.avoidEscape == null)) {
+    disabled = true;
+    return;
+  }
+  disabled = false;
+  if (opts.type != null) {
+    quoteValue = opts.type === 'single' ? SINGLE_QUOTE : DOUBLE_QUOTE;
+    alternateQuote = opts.type !== 'single' ? SINGLE_QUOTE : DOUBLE_QUOTE;
+  }
+  avoidEscape = opts.avoidEscape;
+};
+
+
+exports.tokenBefore = function(token) {
+  if (disabled) return;
+
+  if (token.type === 'String') {
+    var content = token.value.substr(1, token.value.length - 2);
+    var quote = quoteValue;
+    var alternate = alternateQuote;
+
+    var shouldAvoidEscape = avoidEscape &&
+      content.indexOf(quote) >= 0 &&
+      content.indexOf(alternate) < 0;
+
+    if (shouldAvoidEscape) {
+      alternate = quoteValue;
+      quote = alternateQuote;
+    }
+
+    // we always normalize the behavior to remove unnecessary escapes
+    var alternateEscape = new RegExp('\\\\' + alternate, 'g');
+    content = content.replace(alternateEscape, alternate);
+
+    var quoteEscape = new RegExp('([^\\\\])' + quote, 'g');
+    content = content.replace(quoteEscape, '$1\\' + quote);
+
+    token.value = quote + content + quote;
+  }
+};
+
+
+},{}],"esformatter-semicolons":[function(require,module,exports){
+exports.nodeBefore = function(node) {
+  if (~['ExpressionStatement', 'VariableDeclaration', 'ReturnStatement',
+    'ContinueStatement', 'BreakStatement'].indexOf(node.type)
+  ) {
+    var end = true;
+    var token = node.endToken;
+
+    while (isEmpty(token) || isComment(token)) {
+      if (end) {
+        end = false;
+      }
+      token = token.prev;
+    }
+
+    if (!isSemicolon(token) && !isLoop(node.parent)) {
+      var semicolon = {
+        type: 'Punctuator',
+        value: ';',
+        prev: token,
+        next: token.next,
+        root: token.root
+      };
+
+      if (token.next) {
+        token.next.prev = semicolon;
+      } else if (token.root) {
+        token.root.endToken = semicolon;
+      }
+
+      token.next = semicolon;
+
+      if (end) {
+        node.endToken = semicolon;
+      }
+    }
+  } else if ('EmptyStatement' === node.type) {
+    // FIXME: Basically, setting value to an empty string
+    // and changing type to "EmptyStatement" for "WhiteSpace",
+    // "Indent", and "LineBreak" is a workaround to prevent a bug.
+    // See https://github.com/bulyshko/esformatter-semicolons/issues/2
+    var token = node.startToken;
+    var prev = token.prev;
+
+    while (isEmpty(prev)) {
+      prev.type = 'EmptyStatement';
+      prev.value = '';
+      prev = prev.prev;
+    }
+
+    token.value = '';
+  }
+};
+
+function isEmpty(token) {
+  return token && ~['WhiteSpace', 'Indent', 'LineBreak'].indexOf(token.type);
+}
+
+function isComment(token) {
+  return token && ~['LineComment', 'BlockComment'].indexOf(token.type);
+}
+
+function isSemicolon(token) {
+  return token && token.type === 'Punctuator' && token.value === ';';
+}
+
+function isLoop(node) {
+  return node && ~['ForStatement', 'ForInStatement'].indexOf(node.type);
+}
+
+},{}]},{},[1]);
