@@ -5,29 +5,45 @@
 var customOptions = { preset: "default" };
 var $input = $("#input");
 var $output = $("#output");
+var $presets = $("#presets");
+var $options = $("#options");
+var $plugins = $("#plugins");
 
 function init()
 {
+	createPresets();
+	createPlugins();
+
+	addEvents();
+
+	loadOptions();
+	updateOptions();
+}
+
+function addEvents()
+{
 	$input.on("keydown", onCodeKeydown);
 	$("#format").on("click", onFormatClick);
-	$("#options")
+	$options
 		.on("change", "input", onOptionChange)
 		.on("click", ".options-group-title", onOptionsGroupToggle);
 	$("#importScript").on("change", onImportScript);
 	$("#importOptions").on("change", onImportOptions);
+	$presets.on("change", onPresetChange);
+	$plugins.on("change", onPluginChange);
+}
 
+function loadOptions()
+{
 	// get the last options
 	var options = localStorage.getItem("options");
 	if (options)
 		customOptions = JSON.parse(options);
-
-	createPresets();
-	updateOptions();
 }
 
 function updateOptions()
 {
-	$("#options")
+	$options
 		.empty()
 		.append(buildTree(buildDisplayOptions(), ""));
 	updateOptionsOutput();
@@ -105,12 +121,21 @@ function buildTree(options, path)
 
 function createPresets()
 {
-	var $presets = $("#presets");
-	for (var name in presets)
-		$("<option />").text(name).appendTo($presets);
-	$presets
-		.val(customOptions.preset)
-		.on("change", onPresetChange)
+	Object.keys(presets).forEach(function(preset) {
+		$presets.append($("<option />").text(preset));
+	});
+
+	$presets.val(customOptions.preset);
+}
+
+function createPlugins()
+{
+	esformatterPlugins.forEach(function(p) {
+		var n = p.displayName || p.name;
+		var $v = $("<input type='checkbox'/>").val(n);
+		var $p = $("<label />").append(n).append($v);
+		$plugins.append($p);
+	});
 }
 
 function getCustomOptionValue(path)
@@ -137,7 +162,7 @@ function cleanCustomOptions()
 	traverse({ o: customOptions }, "o");
 }
 
-function format()
+function updateOutput()
 {
 	$output.val(
 		esformatter.format($input.val(), customOptions)
@@ -182,7 +207,7 @@ function onOptionChange()
 		cleanCustomOptions();
 	}
 
-	format();
+	updateOutput();
 	updateOptionsOutput();
 }
 
@@ -222,7 +247,7 @@ function onCodeKeydown(ev)
 function onFormatClick(ev)
 {
 	ev.preventDefault();
-	format();
+	updateOutput();
 }
 
 function onImportScript(ev)
@@ -236,9 +261,9 @@ function onImportOptions(ev)
 {
 	readFile(this.files[0], function(t) {
 		customOptions = JSON.parse(t);
-		$("#presets").val(customOptions.preset);
+		$presets.val(customOptions.preset);
 		updateOptions();
-		format();
+		updateOutput();
 	});
 }
 
@@ -246,7 +271,16 @@ function onPresetChange()
 {
 	customOptions.preset = this.value;
 	updateOptions();
-	format();
+	updateOutput();
+}
+
+function onPluginChange(ev)
+{
+	var target = ev.target;
+	var name = target.value;
+	var plugin = esformatterPlugins.reduce(function(v, p) { return v || (p.displayName == name && p); }, null)
+	esformatter[(target.checked ? "" : "un") + "register"](plugin.exports);
+	updateOutput();
 }
 
 /*

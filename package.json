@@ -25,6 +25,7 @@
     "uglifyify": "^2.6.0"
   },
   "scripts": {
-    "bundle": "browserify -g uglifyify -r esformatter-quotes -r esformatter-braces -r esformatter-semicolons esformatter-exports.js > bundle.js"
+    "bundle": "browserify -g uglifyify -r esformatter-quotes -r esformatter-braces -r esformatter-semicolons esformatter-exports.js > bundle.js",
+    "devbundle": "browserify -r esformatter-quotes -r esformatter-braces -r esformatter-semicolons esformatter-exports.js > bundle.js"
   }
 }

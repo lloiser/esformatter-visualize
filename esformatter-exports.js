@@ -2,5 +2,21 @@
 
 window.esformatter = require("esformatter");
 window.presets = require("./node_modules/esformatter/lib/options").presets;
-esformatter.register(require("esformatter-braces"));
-esformatter.register(require("esformatter-quotes"));
+window.esformatterPlugins = [
+	{
+		name: "esformatter-quotes",
+		displayName: "quotes",
+		exports: require("esformatter-quotes")
+		// TODO: add options!
+	},
+	{
+		name: "esformatter-braces",
+		displayName: "braces",
+		exports: require("esformatter-braces")
+	},
+	{
+		name: "esformatter-semicolons",
+		displayName: "semicolons",
+		exports: require("esformatter-semicolons")
+	}
+];

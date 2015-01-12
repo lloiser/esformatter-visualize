@@ -8,9 +8,6 @@ body {
 	flex-direction: column;
 	height: 100vh;
 }
-body > * {
-	margin-bottom: 10px;
-}
 textarea {
 	margin: 0px;
 	padding: 0;
@@ -21,20 +18,22 @@ textarea {
 	-moz-tab-size: 4;
 	white-space: pre-wrap;
 }
-h1 {
+h1, h2, h3 {
 	margin: 0;
+}
+.header {
 	padding: 10px;
 	border-bottom: 1px solid #ccc;
 	background: #fff;
 	flex-shrink: 0;
 }
-h2 {
-	margin: 0 0 5px;
-}
 ul {
 	margin: 0 0 5px;
 	padding: 0;
 	list-style: none;
+}
+label > input {
+	vertical-align: middle;
 }
 
 /* COMMON */
@@ -51,6 +50,16 @@ ul {
 }
 .flex > * {
 	flex: 1;
+}
+.vstack > * {
+	margin-bottom: 10px;
+}
+.vstack-s > * {
+	margin-bottom: 5px;
+}
+.vstack > *:last-child,
+.vstack-s > *:last-child {
+	margin-bottom: 0;
 }
 
 /* PLAYGROUND */

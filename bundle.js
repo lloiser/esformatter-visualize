@@ -1,6 +1,6 @@
 require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-"use strict";window.esformatter=require("esformatter"),window.presets=require("./node_modules/esformatter/lib/options").presets,esformatter.register(require("esformatter-braces")),esformatter.register(require("esformatter-quotes"));
-},{"./node_modules/esformatter/lib/options":44,"esformatter":11,"esformatter-braces":"esformatter-braces","esformatter-quotes":"esformatter-quotes"}],2:[function(require,module,exports){
+"use strict";window.esformatter=require("esformatter"),window.presets=require("./node_modules/esformatter/lib/options").presets,window.esformatterPlugins=[{name:"esformatter-quotes",displayName:"quotes",exports:require("esformatter-quotes"),options:{quotes:{type:null,avoidEscape:null}}},{name:"esformatter-braces",displayName:"braces",exports:require("esformatter-braces")},{name:"esformatter-semicolons",displayName:"semicolons",exports:require("esformatter-semicolons")}];
+},{"./node_modules/esformatter/lib/options":44,"esformatter":11,"esformatter-braces":"esformatter-braces","esformatter-quotes":"esformatter-quotes","esformatter-semicolons":"esformatter-semicolons"}],2:[function(require,module,exports){
 
 },{}],3:[function(require,module,exports){
 (function (process){
