@@ -18,10 +18,10 @@
   ],
   "devDependencies": {
     "browserify": "^8.1.0",
-    "esformatter": "^0.4.3",
-    "esformatter-braces": "^0.4.1",
-    "esformatter-semicolons": "^1.0.3",
-    "esformatter-quotes": "lloiser/esformatter-quotes#disabled",
+    "esformatter": "*",
+    "esformatter-braces": "*",
+    "esformatter-semicolons": "*",
+    "esformatter-quotes": "*",
     "uglifyify": "^2.6.0"
   },
   "scripts": {
